@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, createRef, useCallback } from "react"
 import { navigate } from "gatsby"
 import { Router } from "@reach/router"
 
@@ -41,14 +41,90 @@ const LoggedIn = () => {
     const [bankAccounts, setBankAccounts] = useState()
     
     const [toImage, setToImage] = useState()
-    const [toImageURI, setToImageURI] = useState()
+    const [toImageURI, setToImageURI] = useState([])
 
     const [pdfFile, setPdfFile] = useState()
     const [customPdfFile, setCustomPdfFile] = useState()
 
-    // PDF VIewer
+    // PDF Viewer
     const [numPages, setNumPages] = useState(null);
-    const [pageNumber, setPageNumber] = useState(1);
+
+    const [numPagesAtt, setNumPagesAtt] = useState()
+    const [attPages, setAttPages] = useState()
+
+    // Fetch PDF contents and reference them later
+    const myPdfCanvasContainer = useRef();
+
+    // Load Google Auth Token from local storage
+    useEffect(() => {
+        // Load Google Auth Token
+        setGoogleToken(localStorage.getItem("google:tokens"))
+
+    }, [])
+    
+    // If Google Token is in place, fetch data from API
+    useEffect(() => {
+        if (googleToken === undefined) return
+
+        // Fetch remote data
+        fetch(`/api/sheets`, {
+            method: "POST",
+            headers: {"Authorization": googleToken}
+        })
+        .then((msg) => {
+            console.log("received msg:", msg)
+            return msg.json()
+        })
+        .then(data => {
+            console.log("received data:", data)
+            if (data.expenseTypes) setExpenseTypes(data.expenseTypes)
+            if (data.bankAccounts) setBankAccounts(data.bankAccounts)
+        })
+        .catch(err => {
+            console.error("received error:", err)
+        })
+    }, [googleToken])
+
+    // we have uploaded an image, now read it into 
+    // a string
+    useEffect(() => {
+        let fileReader, isCancel = false;
+        console.log("updated toImage", toImage)
+        if (toImage) {
+          fileReader = new FileReader();
+          fileReader.onload = (e) => {
+            const { result } = e.target;
+            if (result && !isCancel) {
+                console.log("done reading image:", result)
+                setToImageURI([result])
+            }
+          }
+          //fileReader.readAsDataURL(toImage[0]);
+          fileReader.readAsDataURL(toImage)
+        }
+        return () => {
+          isCancel = true;
+          if (fileReader && fileReader.readyState === 1) {
+            fileReader.abort();
+          }
+        }
+    
+    }, [toImage]);
+
+    // Redraw PDF if there is a change in the images array 
+    // (uploaded or generated from att. PDF)
+    useEffect(() => {
+        if (toImageURI.length > 0) { onUpdatePdfFile() }
+    }, [toImageURI])
+
+    // Monitor changes in number of pages in attachment file
+    // if changes, then draw these pages
+    // which finally triggers drawing of images that are included
+    // in final PDF
+    useEffect(() => {
+        if (numPagesAtt) { generateAttPages() }
+
+    }, [numPagesAtt])
 
     function onDocumentLoadSuccess({ numPages }) {
         console.log("document load success, numpages:", numPages)
@@ -75,10 +151,31 @@ const LoggedIn = () => {
         )
     }
 
-    //const toOrFrom = watch("isIncoming") ? "Til" : "Fra"
+    // Images that are embedded in PDF
+    const docImages = () => {
+        let imgList = []
 
+        if (toImageURI.length > 0) {
+            for (let index = 0; index < toImageURI.length; index++) {
+                imgList.push([{image: toImageURI[index], width: 415.35, alignment: "center"}])
+            }
+
+            return {'table': {
+                body: imgList,
+                widths: ['100%']
+            }}
+        }
+        else return {}
+    }
+
+    // Definition of PDF document attachment that is drawn
+    // Monitors form fields and updates correspondingly
     const docDefinition = {
         userPassword: watch("toFilePassword"),
+        footer: function(currentPage, pageCount) { 
+            return {text: 'Side ' + currentPage.toString() + ' av ' + pageCount,
+            alignment: "center"}
+        },
         content: [
           {
             columns: 
@@ -111,7 +208,8 @@ const LoggedIn = () => {
             },
            layout: 'noBorders',
           },
-          (toImageURI && {image: toImageURI, width: 500, alignment: "center"})
+          docImages(),
+          //(toImageURI && {image: toImageURI, width: 500, alignment: "center"})
           
 
         ],
@@ -120,76 +218,22 @@ const LoggedIn = () => {
 
       };
 
-    useEffect(() => {
-        // Load Google Auth Token
-        setGoogleToken(localStorage.getItem("google:tokens"))
 
-    }, [])
     
-    useEffect(() => {
-        // If Google Token is in place, fetch data from API
-        if (googleToken === undefined) return
 
-        // Fetch remote data
-        fetch(`/api/sheets`, {
-            method: "POST",
-            headers: {"Authorization": googleToken}
-        })
-        .then((msg) => {
-            console.log("received msg:", msg)
-            return msg.json()
-        })
-        .then(data => {
-            console.log("received data:", data)
-            if (data.expenseTypes) setExpenseTypes(data.expenseTypes)
-            if (data.bankAccounts) setBankAccounts(data.bankAccounts)
-        })
-        .catch(err => {
-            console.error("received error:", err)
-        })
-    }, [googleToken])
-
-    useEffect(() => {
-        let fileReader, isCancel = false;
-        if (toImage) {
-          fileReader = new FileReader();
-          fileReader.onload = (e) => {
-            const { result } = e.target;
-            if (result && !isCancel) {
-                setToImageURI(result)
-            }
-          }
-          fileReader.readAsDataURL(toImage);
+    // Called when attachment PDF is done rendering
+    // can now generate images to PDF
+    const findAttPdf = () => {
+        let imageList = []
+        console.log("myPdfCanvasContainer:", myPdfCanvasContainer)
+        for (let index = 0; index < myPdfCanvasContainer.current.length; index++) {
+            imageList.push(myPdfCanvasContainer.current[index].current.toDataURL('image/jpeg'))
         }
-        return () => {
-          isCancel = true;
-          if (fileReader && fileReader.readyState === 1) {
-            fileReader.abort();
-          }
-        }
-    
-      }, [toImage]);
-
-      useEffect(() => {
-          if (toImageURI) onUpdatePdfFile()
-      }, [toImageURI])
-
-      useEffect(() => {
-        if (customPdfFile) {
-            let fileReader = new FileReader();
-            fileReader.onload = (e) => {
-                const { result } = e.target;
-                if (result) {
-                    console.log("Done readgin!")// result:", result)
-                    setPdfFile(result)
-                }
-            }
-            fileReader.readAsDataURL(customPdfFile);
-        }
-      }, [customPdfFile])
-
+        setToImageURI(imageList)
+    }
 
     const onChangeImage = (data) => {
+        console.log("set new image:", data)
         setToImage(data.target.files[0])
     }
 
@@ -212,16 +256,16 @@ const LoggedIn = () => {
         //setValue("toFilePDF", pdfFile)
     }
 
-    const onUpdatePdfFile = () => {
+    function onUpdatePdfFile() {
         console.log("onUpdatePdfFile and customPdfFile is:", customPdfFile)
-        if (customPdfFile === undefined) {
-            const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
-            
-            pdfDocGenerator.getDataUrl((dataUrl) => {
-                setPdfFile(dataUrl)
-                //console.log("Generating PDF:", dataUrl)
-            })
-        }
+        //if (customPdfFile === undefined) {
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
+        
+        pdfDocGenerator.getDataUrl((dataUrl) => {
+            setPdfFile(dataUrl)
+            //console.log("Generating PDF:", dataUrl)
+        })
+        //}
     }
 
     const onSetExternalPDF = (data) => {
@@ -277,10 +321,42 @@ const LoggedIn = () => {
     
     }
 
+    // Generate PDF pages from attachment
+    // not actually shown in browser, but are used to
+    // generate images to main PDF
+    function generateAttPages(props) {
+
+        console.log("generateAttPages for numPagesAtt:", numPagesAtt)
+
+        let pages = []
+        let newRefList = new Array(numPagesAtt)
+
+        for (let index = 0; index < numPagesAtt; index++) {
+            newRefList[index] = myPdfCanvasContainer.current ? myPdfCanvasContainer.current[index] ?? createRef() : createRef()
+        }
+        myPdfCanvasContainer.current = newRefList
+
+        for (let index = 1; index < numPagesAtt+1; index++) {
+            pages.push(<Page 
+                canvasRef={myPdfCanvasContainer.current[index-1]}
+                onRenderSuccess={findAttPdf}
+                pageNumber={index}
+                className="pdfPage" 
+                width={400}/>)
+        }
+
+        console.log("we have pages:", pages)
+
+        // Push list of "Page" objects to state
+        setAttPages(pages)
+
+    }
+
   return (
     <Layout>
         <h1>Registrer bilag</h1>
         <button
+          type="button"
           onClick={() => {
             fetch(`/api/logout?token=${googleToken}`, {
               method: "POST",
@@ -295,7 +371,7 @@ const LoggedIn = () => {
               })
           }}
         >
-          Logout
+          Logg ut
         </button>
 
         <div style={style.mainContent}>
@@ -357,7 +433,7 @@ const LoggedIn = () => {
                 Beskrivelse:
             </label>
             <textarea style={style.formLabel} {...register("toDescription")}></textarea>
-
+            
             <label style={style.formLabel}>
                 Bildevedlegg:
                 <input type="file" 
@@ -367,8 +443,6 @@ const LoggedIn = () => {
                  })}
                 ></input>
             </label>
-
-            <h2>Eller last opp en fil...</h2>
 
             <label style={style.formLabel}>
                 PDF-vedlegg:
@@ -399,21 +473,29 @@ const LoggedIn = () => {
                  <input type="text" {...register("toFileName")}></input>
             </label>
 
-
             <input type="submit" value="Send inn" />
         </form>
         <div>
-            <p style={{textAlign: "center"}}>
+            <div style={{textAlign: "center"}}>
             {numPages == 1 && (<p>{numPages} side</p>)}
             {numPages > 1 && (<p>{numPages} sider</p>)}
-            </p>
+            </div>
             {pdfFile && 
             <Document className="pdfContainer" 
                 file={pdfFile} 
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={console.error}>
-                <Page className="pdfPage" pageNumber={pageNumber} width={400}/>
+                <Page className="pdfPage" pageNumber={1} width={400}/>
                 {numPages > 1 && (<Page pageNumber={2} className="pdfPage"  width={400} />)}
+                {numPages > 2 && (<Page pageNumber={3} className="pdfPage"  width={400} />)}
+            </Document>
+            }
+            {customPdfFile && 
+            <Document className="hidden" 
+                file={customPdfFile} 
+                onLoadSuccess={({numPages}) => setNumPagesAtt(numPages)}
+                onLoadError={console.error}>
+                    {attPages}
             </Document>
             }
         </div>
@@ -421,11 +503,6 @@ const LoggedIn = () => {
     </Layout>
   )
 }
-
-//
-
-// <iframe style={style.form} src={pdfFile}>
-// </iframe>
 
 
 const style = {
