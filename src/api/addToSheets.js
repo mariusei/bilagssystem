@@ -17,7 +17,7 @@ const handler = async (req, res) => {
         if (token.access_token === undefined) throw "No access token was provided"
 
         // Received data from user:
-        console.log("recevied:", req.body)
+        //console.log("recevied:", req.body)
         data = JSON.parse(req.body)
 
         oauth2Client.setCredentials(token)      
@@ -41,7 +41,7 @@ const handler = async (req, res) => {
         if (rows.length) {
             nRows = rows.length
             nCol = rows[0].length
-            console.log(rows[0], nRows, nCol)
+            //console.log(rows[0], nRows, nCol)
         } else {
             console.log('No data found.');
         }
@@ -57,7 +57,7 @@ const handler = async (req, res) => {
         if (data.expenseTypeColNo == '5') sign = -1
         dataToPost[data.creditColNo] = - sign * data.amount
 
-        console.log("To POST:", dataToPost)
+        //console.log("To POST:", dataToPost)
 
         const sheetPosted = await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.SHEET_ID, 
@@ -69,7 +69,7 @@ const handler = async (req, res) => {
             }
         })
 
-        console.log("result from poST:", sheetPosted.data)
+        //console.log("result from poST:", sheetPosted.data)
 
         return res.status(200).json({ message: "All OK - uploaded file" })
 

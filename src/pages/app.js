@@ -92,10 +92,16 @@ const LoggedIn = () => {
         pageMargins: [ 90, 70, 90, 70 ],
 
       };
-    
+
     useEffect(() => {
         // Load Google Auth Token
         setGoogleToken(localStorage.getItem("google:tokens"))
+
+    }, [])
+    
+    useEffect(() => {
+        // If Google Token is in place, fetch data from API
+        if (googleToken === undefined) return
 
         // Fetch remote data
         fetch(`/api/sheets`, {
@@ -114,7 +120,7 @@ const LoggedIn = () => {
         .catch(err => {
             console.error("received error:", err)
         })
-    }, [])
+    }, [googleToken])
 
     useEffect(() => {
         let fileReader, isCancel = false;

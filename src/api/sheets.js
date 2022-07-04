@@ -23,7 +23,7 @@ const handler = async (req, res) => {
 
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SHEET_ID, 
-        range: 'Bilag!A2:Z', 
+        range: process.env.SHEET_RANGE, 
       }, (err, sheetRes) => {
         if (err) return console.log('The API returned an error: ' + err);
         const rows = sheetRes.data.values;
@@ -33,7 +33,7 @@ const handler = async (req, res) => {
           if (rows[0].length) {
             expenseTypes = {}
             rows[0].forEach((val, ix) => {if (ix > 4) { expenseTypes[ix] = val}})
-            console.log(expenseTypes) // OK
+            //console.log(expenseTypes) // OK
           } else {
             console.error("row 0 didn't contain any data, fetcing from API")
           }
@@ -45,9 +45,9 @@ const handler = async (req, res) => {
             "5": rows[0][5]
           }
 
-          rows.map((row) => {
-            console.log(`${row[0]}, ${row[4]}`);
-          });
+          // rows.map((row) => {
+          //   console.log(`${row[0]}, ${row[4]}`);
+          // });
 
           return res.status(200).json({
             expenseTypes: expenseTypes,
