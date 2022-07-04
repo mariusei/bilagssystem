@@ -11,12 +11,8 @@ import { Buffer } from "buffer";
 import PrivateRoute from "../components/privateRoute"
 
 import Layout from "../components/layout"
-import Seo from "../components/seo"
+//import Seo from "../components/seo"
 
-import RobotoRegular from "../fonts/Roboto-Regular.ttf"
-import RobotoBold from "../fonts/Roboto-Bold.ttf"
-import RobotoItalic from "../fonts/Roboto-Italic.ttf"
-import RobotoMediumItalic from "../fonts/Roboto-MediumItalic.ttf"
 
 var fonts = {
     Roboto: {
