@@ -5,7 +5,7 @@ import { Router } from "@reach/router"
 import { useForm } from "react-hook-form"
 
 import pdfMake from "pdfmake/build/pdfmake"
-import pdfFonts from "pdfmake/build/vfs_fonts"
+//import pdfFonts from "pdfmake/build/vfs_fonts"
 import { Buffer } from "buffer";
 
 import PrivateRoute from "../components/privateRoute"
@@ -13,8 +13,23 @@ import PrivateRoute from "../components/privateRoute"
 import Layout from "../components/layout"
 import Seo from "../components/seo"
 
+import RobotoRegular from "../fonts/Roboto-Regular.ttf"
+import RobotoBold from "../fonts/Roboto-Bold.ttf"
+import RobotoItalic from "../fonts/Roboto-Italic.ttf"
+import RobotoMediumItalic from "../fonts/Roboto-MediumItalic.ttf"
 
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+var fonts = {
+    Roboto: {
+        normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+        bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+        italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+        bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+      },
+  };
+
+
+
+//pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 const LoggedIn = () => {
     const {register, watch, handleSubmit, setValue} = useForm()
@@ -156,7 +171,7 @@ const LoggedIn = () => {
         setValue("attachmentNo", watch("toFileName").substring(0,4))
 
         if (customPdfFile === undefined) {
-            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
             pdfDocGenerator.getDataUrl((dataUrl) => setPdfFile(dataUrl))
         }
 

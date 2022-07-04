@@ -15,7 +15,7 @@ const getUser = () =>
 
 const PrivateRoute = ({ component: Component, location, ...rest }) => {
   console.log("private")
-  if (!isLoggedIn() && location.pathname !== `/`) {
+  if (isBrowser() && !isLoggedIn() && location.pathname !== `/`) {
     navigate("/")
     return null
   }
