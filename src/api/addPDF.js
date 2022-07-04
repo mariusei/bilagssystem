@@ -11,7 +11,9 @@ let oauth2Client = new google.auth.OAuth2(
 )
 
 
-const handler = async (req, res) => {
+//const handler = async (req, res) => {
+
+export default async function handler(req, res) {
     try {
         const token = JSON.parse(req.headers.authorization)
         if (token.access_token === undefined) throw "No access token was provided"
@@ -22,7 +24,6 @@ const handler = async (req, res) => {
 
         oauth2Client.setCredentials(token)
 
-        console.log("NEXT: PDF", data)
 
         const drive = google.drive({version: 'v3', auth: oauth2Client});
         const fileMetadata = {
@@ -59,4 +60,4 @@ const handler = async (req, res) => {
       return res.status(500).json({ message: "There was an error", error: err })
     }}
 
-module.exports = handler
+//module.exports = handler

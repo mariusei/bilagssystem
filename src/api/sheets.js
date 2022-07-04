@@ -8,7 +8,8 @@ let oauth2Client = new google.auth.OAuth2(
   process.env.APP_HOSTNAME
 )
 
-const handler = async (req, res) => {
+//const handler = async (req, res) => {
+export default async function handler(req, res) {
   try {
     const token = JSON.parse(req.headers.authorization)
     if (token.access_token) {
@@ -30,8 +31,8 @@ const handler = async (req, res) => {
         if (rows.length) {
           // Fetch expense types
           // 1st row: expense types:
+          let expenseTypes = {}
           if (rows[0].length) {
-            expenseTypes = {}
             rows[0].forEach((val, ix) => {if (ix > 4) { expenseTypes[ix] = val}})
             //console.log(expenseTypes) // OK
           } else {
@@ -39,7 +40,7 @@ const handler = async (req, res) => {
           }
 
           // Fetch bank account
-          bankAccounts =
+          let bankAccounts =
           {
             "4": rows[0][4],
             "5": rows[0][5]
@@ -69,4 +70,4 @@ const handler = async (req, res) => {
   }
 }
 
-module.exports = handler
+//module.exports = handler

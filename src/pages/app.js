@@ -8,10 +8,15 @@ import pdfMake from "pdfmake/build/pdfmake"
 //import pdfFonts from "pdfmake/build/vfs_fonts"
 import { Buffer } from "buffer";
 
+import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack';
+
 import PrivateRoute from "../components/privateRoute"
 
 import Layout from "../components/layout"
 //import Seo from "../components/seo"
+import SVLogo from "../images/sv.png"
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 
 var fonts = {
@@ -41,6 +46,15 @@ const LoggedIn = () => {
     const [pdfFile, setPdfFile] = useState()
     const [customPdfFile, setCustomPdfFile] = useState()
 
+    // PDF VIewer
+    const [numPages, setNumPages] = useState(null);
+    const [pageNumber, setPageNumber] = useState(1);
+
+    function onDocumentLoadSuccess({ numPages }) {
+        console.log("document load success, numpages:", numPages)
+        setNumPages(numPages);
+    }
+
     function SelectFromKeyValueObject(props) {
         const objectWithKeyValues = props.obj
         const formLabel = props.label
@@ -52,7 +66,7 @@ const LoggedIn = () => {
 
         for (const key in objectWithKeyValues)
         {
-            options.push(<option value={key}>{objectWithKeyValues[key]}</option>)
+            options.push(<option key={key} value={key}>{objectWithKeyValues[key]}</option>)
         }
         return (
         <select {...register(formLabel)}>
@@ -61,19 +75,32 @@ const LoggedIn = () => {
         )
     }
 
+    //const toOrFrom = watch("isIncoming") ? "Til" : "Fra"
+
     const docDefinition = {
+        userPassword: watch("toFilePassword"),
         content: [
-          {text: 'Bilag - Lillestrøm Sosialistiske Venstreparti', lineHeight: 2},
-          'Jonas Lies gate 18',
-          '2000 Lillestrøm',
-          'Org.nr. 896 853 082',
+          {
+            columns: 
+            [
+                {stack: [{text: 'Bilag - Lillestrøm Sosialistiske Venstreparti'},
+                  'Jonas Lies gate 18',
+                  '2000 Lillestrøm',
+                  'Org.nr. 896 853 082',
+                  ],
+                width: "70%"
+                },
+                [{image: SVLogo, width: 50, alignment: "right"}]
+                ],
+            margin: [0,30]
+          },
           {text: watch("accountDate"), lineHeight:3, alignment: "right", fontSize: 20}, 
           {text: 'Beløp: '},
           {text: watch("amount") + " kr", fontSize: 24, lineHeight: 3},
           {text: 'Beskrivelse i regnskapet:'},
           {text: watch("description"), lineHeight:3, fontSize: 20}, 
 
-          {text: "Til:"},
+          {text: (watch("isIncoming")) ? "Fra" : "Til"},
           {text: watch("toReceiver") , fontSize: 14, lineHeight: 1.5},
           {text: "Kontonummer:"},
           {text: watch("toAccount"), fontSize: 14, lineHeight: 1.5},
@@ -144,12 +171,16 @@ const LoggedIn = () => {
       }, [toImage]);
 
       useEffect(() => {
+          if (toImageURI) onUpdatePdfFile()
+      }, [toImageURI])
+
+      useEffect(() => {
         if (customPdfFile) {
             let fileReader = new FileReader();
             fileReader.onload = (e) => {
                 const { result } = e.target;
                 if (result) {
-                    console.log("Done readgin! result:", result)
+                    console.log("Done readgin!")// result:", result)
                     setPdfFile(result)
                 }
             }
@@ -165,6 +196,8 @@ const LoggedIn = () => {
     const onChangeForm = (data) => {
         // update filename based on inputs
 
+        console.log("onChangeForm, data:", data)
+
         const randomName = (Math.random() + 1).toString(36).substring(10)
 
         setValue("toFileName", 
@@ -172,12 +205,23 @@ const LoggedIn = () => {
         )
         setValue("attachmentNo", watch("toFileName").substring(0,4))
 
-        if (customPdfFile === undefined) {
-            const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
-            pdfDocGenerator.getDataUrl((dataUrl) => setPdfFile(dataUrl))
-        }
+        onUpdatePdfFile()
+
+        console.log("isIncoming:", watch("isIncoming"))//, "and text:", toOrFrom)
 
         //setValue("toFilePDF", pdfFile)
+    }
+
+    const onUpdatePdfFile = () => {
+        console.log("onUpdatePdfFile and customPdfFile is:", customPdfFile)
+        if (customPdfFile === undefined) {
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
+            
+            pdfDocGenerator.getDataUrl((dataUrl) => {
+                setPdfFile(dataUrl)
+                //console.log("Generating PDF:", dataUrl)
+            })
+        }
     }
 
     const onSetExternalPDF = (data) => {
@@ -189,11 +233,11 @@ const LoggedIn = () => {
 
     let fromApiToGoogle = {}
 
-
     const onSubmit = (data) => { 
         //alert(JSON.stringify(data))
         data.externalPDF = ''
         data.toFileImage = ''
+        data.toFilePassword = ''
         console.log(data)
         fetch("/api/addToSheets", {
             method: "POST",
@@ -209,6 +253,8 @@ const LoggedIn = () => {
         console.log("received from API:", fromApiToGoogle)
 
         // Upload PDF
+
+        console.log("Uploading to sheet")
        
         let formData = new FormData();
         formData.append('uploadedFile', 
@@ -285,6 +331,10 @@ const LoggedIn = () => {
                 Beløp:
                 <input type="number" {...register("amount")}></input>
             </label>
+            <label htmlFor="isIncoming" style={style.formLabel}>
+                Innbetaling?
+                <input type="checkbox" {...register("isIncoming")}></input>
+            </label>
 
             <label style={style.formLabel}>
                 Bilagsnummer:
@@ -327,12 +377,12 @@ const LoggedIn = () => {
                  {...register("externalPDF", {
                  onChange: (e) => onSetExternalPDF(e)})}
                 ></input>
-                <button onClick={() => {
+                <button type="button" onClick={() => {
                     setCustomPdfFile()
                     setValue("externalPDF", undefined)
                     setPdfFile('')
                     return false
-                }}>Fjern</button>
+                }}>X</button>
             </label>
 
             
@@ -352,12 +402,31 @@ const LoggedIn = () => {
 
             <input type="submit" value="Send inn" />
         </form>
-        <iframe style={style.form} src={pdfFile}>
-        </iframe>
+        <div>
+            <p style={{textAlign: "center"}}>
+            {numPages == 1 && (<p>{numPages} side</p>)}
+            {numPages > 1 && (<p>{numPages} sider</p>)}
+            </p>
+            {pdfFile && 
+            <Document className="pdfContainer" 
+                file={pdfFile} 
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={console.error}>
+                <Page className="pdfPage" pageNumber={pageNumber} width={400}/>
+                {numPages > 1 && (<Page pageNumber={2} className="pdfPage"  width={400} />)}
+            </Document>
+            }
+        </div>
         </div>
     </Layout>
   )
 }
+
+//
+
+// <iframe style={style.form} src={pdfFile}>
+// </iframe>
+
 
 const style = {
     mainContent: {

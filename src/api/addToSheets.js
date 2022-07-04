@@ -11,14 +11,15 @@ let oauth2Client = new google.auth.OAuth2(
 )
 
 
-const handler = async (req, res) => {
+//const handler = async (req, res) => {
+export default async function handler(req, res) {
     try {
         const token = JSON.parse(req.headers.authorization)
         if (token.access_token === undefined) throw "No access token was provided"
 
         // Received data from user:
         //console.log("recevied:", req.body)
-        data = JSON.parse(req.body)
+        const data = JSON.parse(req.body)
 
         oauth2Client.setCredentials(token)      
         const sheets = google.sheets({version: 'v4', auth: oauth2Client})
@@ -52,10 +53,16 @@ const handler = async (req, res) => {
         dataToPost[0] = data.accountDate
         dataToPost[1] = data.description
         dataToPost[2] = data.attachmentNo
-        dataToPost[data.expenseTypeColNo] = -data.amount
-        let sign = 1
-        if (data.expenseTypeColNo == '5') sign = -1
-        dataToPost[data.creditColNo] = - sign * data.amount
+        let transferSign = data.isIncoming ? +1 : -1
+        dataToPost[data.expenseTypeColNo] = transferSign * data.amount
+        dataToPost[data.creditColNo] = transferSign * data.amount
+
+        // If inter account transfer, reverse signs
+        if (data.creditColNo == '4' && data.expenseTypeColNo == '5') {
+
+            dataToPost[data.expenseTypeColNo] = -data.amount
+            dataToPost[data.creditColNo] = +data.amount
+        }
 
         //console.log("To POST:", dataToPost)
 
@@ -79,4 +86,4 @@ const handler = async (req, res) => {
       return res.status(500).json({ message: "There was an error", error: err })
     }}
 
-module.exports = handler
+//module.exports = handler
