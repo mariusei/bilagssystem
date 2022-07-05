@@ -5,7 +5,7 @@ import { Router } from "@reach/router"
 import { useForm } from "react-hook-form"
 
 import pdfMake from "pdfmake/build/pdfmake"
-//import pdfFonts from "pdfmake/build/vfs_fonts"
+
 import { Buffer } from "buffer";
 
 import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack';
@@ -29,9 +29,6 @@ var fonts = {
   };
 
 
-
-//pdfMake.vfs = pdfFonts.pdfMake.vfs;
-
 const LoggedIn = () => {
     const {register, watch, handleSubmit, setValue} = useForm()
 
@@ -40,7 +37,6 @@ const LoggedIn = () => {
     const [expenseTypes, setExpenseTypes] = useState()
     const [bankAccounts, setBankAccounts] = useState()
     
-    const [toImage, setToImage] = useState()
     const [toImageURI, setToImageURI] = useState([])
 
     const [pdfFile, setPdfFile] = useState()
@@ -84,32 +80,6 @@ const LoggedIn = () => {
             console.error("received error:", err)
         })
     }, [googleToken])
-
-    // we have uploaded an image, now read it into 
-    // a string
-    useEffect(() => {
-        let fileReader, isCancel = false;
-        console.log("updated toImage", toImage)
-        if (toImage) {
-          fileReader = new FileReader();
-          fileReader.onload = (e) => {
-            const { result } = e.target;
-            if (result && !isCancel) {
-                console.log("done reading image:", result)
-                setToImageURI([result])
-            }
-          }
-          //fileReader.readAsDataURL(toImage[0]);
-          fileReader.readAsDataURL(toImage)
-        }
-        return () => {
-          isCancel = true;
-          if (fileReader && fileReader.readyState === 1) {
-            fileReader.abort();
-          }
-        }
-    
-    }, [toImage]);
 
     // Redraw PDF if there is a change in the images array 
     // (uploaded or generated from att. PDF)
@@ -218,9 +188,6 @@ const LoggedIn = () => {
 
       };
 
-
-    
-
     // Called when attachment PDF is done rendering
     // can now generate images to PDF
     const findAttPdf = () => {
@@ -232,9 +199,21 @@ const LoggedIn = () => {
         setToImageURI(imageList)
     }
 
-    const onChangeImage = (data) => {
+    // Uploading images -> read into toImageURI which triggers PDF redraw
+    const onChangeImage = async (data) => {
         console.log("set new image:", data)
-        setToImage(data.target.files[0])
+        //setToImage(data.target.files[0])
+
+        const files = [...data.target.files].map(file => {
+            const reader = new FileReader();
+            return new Promise(resolve => {
+              reader.onload = () => resolve(reader.result);
+              reader.readAsDataURL(file);
+            });
+        });
+        const res = await Promise.all(files);
+        console.log(res)
+        setToImageURI(res)
     }
 
     const onChangeForm = (data) => {
@@ -258,14 +237,13 @@ const LoggedIn = () => {
 
     function onUpdatePdfFile() {
         console.log("onUpdatePdfFile and customPdfFile is:", customPdfFile)
-        //if (customPdfFile === undefined) {
+
         const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
         
         pdfDocGenerator.getDataUrl((dataUrl) => {
             setPdfFile(dataUrl)
             //console.log("Generating PDF:", dataUrl)
         })
-        //}
     }
 
     const onSetExternalPDF = (data) => {
@@ -441,6 +419,7 @@ const LoggedIn = () => {
                  {...register("toFileImage", {
                      onChange: (e) => onChangeImage(e)
                  })}
+                 multiple
                 ></input>
             </label>
 
