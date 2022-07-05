@@ -383,7 +383,7 @@ const LoggedIn = () => {
 
             <label style={style.formLabel}>
                 Beløp:
-                <input type="number" {...register("amount")}></input>
+                <input type="number" step="0.01" {...register("amount")}></input>
             </label>
             <label htmlFor="isIncoming" style={style.formLabel}>
                 Innbetaling?
