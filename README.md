@@ -1,6 +1,6 @@
 <!-- AUTO-GENERATED-CONTENT:START (STARTER) -->
-<p align="center">">
-    <img alt="Promo image" src="./src/images/promoimage.png" width="60" />
+<p align="center">
+    <img alt="Promo image" src="./src/images/promoimage.png" width="450" />
   </a>
 </p>
 <h1 align="center">
