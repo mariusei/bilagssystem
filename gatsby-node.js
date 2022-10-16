@@ -17,7 +17,7 @@ exports.onCreateWebpackConfig = ({
 }) => {
   // if (stage === "build-html") {
       actions.setWebpackConfig({
-          externals: ['canvas']
+          externals: ['canvas'],
       })
   // }
 };

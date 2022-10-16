@@ -2,14 +2,16 @@ const { google } = require("googleapis")
 const clientId = process.env.GOOGLE_CLIENT_ID
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET
 
-let oauth2Client = new google.auth.OAuth2(
-  clientId,
-  clientSecret,
-  process.env.APP_HOSTNAME
-)
 
 //const handler = async (req, res) => {
 export default async function handler(req, res) {
+
+  let oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.APP_HOSTNAME
+  )
+
   try {
     const token = JSON.parse(req.headers.authorization)
     if (token.access_token) {

@@ -1,23 +1,20 @@
 const { google } = require("googleapis")
 
-const clientId = process.env.GOOGLE_CLIENT_ID
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-
-// Initialize the Google OAuth client.
-const oauth2Client = new google.auth.OAuth2(
-  clientId,
-  clientSecret,
-  // Redirect URL:
-  // http://localhost:8000/api/googleAccessToken
-  process.env.GOOGLE_REDIRECT_URI
-)
-
-google.options({ auth: oauth2Client })
-
-const scopes = ["profile", "https://www.googleapis.com/auth/drive"] 
-// "https://www.googleapis.com/auth/spreadsheets"]
-
 const login = async (req, res) => {
+  // Initialize the Google OAuth client.
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    // Redirect URL:
+    // http://localhost:8000/api/googleAccessToken
+    process.env.GOOGLE_REDIRECT_URI
+  )
+
+  google.options({ auth: oauth2Client })
+
+  const scopes = ["profile", "https://www.googleapis.com/auth/drive"] 
+
+  // "https://www.googleapis.com/auth/spreadsheets"]
   // Generate the callback URL with options.
   const authorizeUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",

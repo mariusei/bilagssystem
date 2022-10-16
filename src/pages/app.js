@@ -8,7 +8,7 @@ import pdfMake from "pdfmake/build/pdfmake"
 
 import { Buffer } from "buffer";
 
-import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack';
+import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack5';
 
 import PrivateRoute from "../components/privateRoute"
 
@@ -463,7 +463,9 @@ const LoggedIn = () => {
             <Document className="pdfContainer" 
                 file={pdfFile} 
                 onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={console.error}>
+                onLoadError={console.error}
+                onPassword={(callback) => callback(watch("toFilePassword"))}
+            >
                 <Page className="pdfPage" pageNumber={1} width={400}/>
                 {numPages > 1 && (<Page pageNumber={2} className="pdfPage"  width={400} />)}
                 {numPages > 2 && (<Page pageNumber={3} className="pdfPage"  width={400} />)}

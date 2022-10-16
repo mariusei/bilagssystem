@@ -1,18 +1,16 @@
 const { google } = require("googleapis")
 
-const clientId = process.env.GOOGLE_CLIENT_ID
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-
-// Initialize our Google OAuth client, same as in login function.
-const oauth2Client = new google.auth.OAuth2(
-  clientId,
-  clientSecret,
-  process.env.GOOGLE_REDIRECT_URI,
-)
-
-google.options({ auth: oauth2Client })
-
 const googleAccessToken = async (req, res) => {
+  // Initialize our Google OAuth client, same as in login function.
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  )
+
+  google.options({ auth: oauth2Client })
+
+  console.log("In googleAccesToken")
   // Get the code appended from Google generateAuthUrl.
   const code = req.query.code
 
