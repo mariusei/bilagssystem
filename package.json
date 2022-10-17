@@ -35,6 +35,7 @@
     "start": "gatsby develop",
     "serve": "gatsby serve -p 8000",
     "clean": "gatsby clean",
+    "debug": "gatsby develop -S",
     "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
   },
   "repository": {

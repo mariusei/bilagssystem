@@ -1,8 +1,8 @@
-const { google } = require("googleapis")
+import { google } from 'googleapis';
 
 const login = async (req, res) => {
   // Initialize the Google OAuth client.
-  const oauth2Client = new google.auth.OAuth2(
+  let oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     // Redirect URL:
@@ -20,6 +20,8 @@ const login = async (req, res) => {
     access_type: "offline",
     scope: scopes.join(" "),
   })
+
+  oauth2Client = null
 
   // Appends the ?code query param to the return URL from above.
   // Redirects to next Gatsby Function.

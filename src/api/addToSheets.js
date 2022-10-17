@@ -1,6 +1,7 @@
 const { Readable } = require('stream')
 
-const { google } = require("googleapis")
+//const { google } = require("googleapis")
+import { google } from 'googleapis';
 
 
 
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
         const data = JSON.parse(req.body)
 
         oauth2Client.setCredentials(token)      
-        const sheets = google.sheets({version: 'v4', auth: oauth2Client})
+        let sheets = google.sheets({version: 'v4', auth: oauth2Client})
     
         if (sheets === undefined) {
             console.error("API: sheets couldn't be found/is undefined")
@@ -44,7 +45,8 @@ export default async function handler(req, res) {
             nCol = rows[0].length
             //console.log(rows[0], nRows, nCol)
         } else {
-            console.log('No data found.');
+            console.error('No data found.');
+            throw "Ingen data ble funnet i Google Sheets-regnearket?"
         }
 
         // Populate sheet with data that was received
@@ -76,13 +78,20 @@ export default async function handler(req, res) {
             }
         })
 
+        sheets = null
+        oauth2Client = null
+
         //console.log("result from poST:", sheetPosted.data)
 
-        return res.status(200).json({ message: "All OK - uploaded file" })
+        return res.status(200).json({ 
+            message: "Alt OK!",
+            url: "https://docs.google.com/spreadsheets/d/" 
+            + String(sheetPosted.data.spreadsheetId) 
+        })
 
 
     } catch (err) {
-      console.log("An error:", err)
+      console.error("An error:", err)
       return res.status(500).json({ message: "There was an error", error: err })
     }}
 

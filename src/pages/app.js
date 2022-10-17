@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, createRef, useCallback } from "react"
+import React, { useState, useEffect, useRef, createRef } from "react"
 import { navigate } from "gatsby"
 import { Router } from "@reach/router"
 
@@ -8,9 +8,10 @@ import pdfMake from "pdfmake/build/pdfmake"
 
 import { Buffer } from "buffer";
 
-import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack5';
+import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack';
 
 import PrivateRoute from "../components/privateRoute"
+import StatusBar from "../components/statusbar"
 
 import Layout from "../components/layout"
 //import Seo from "../components/seo"
@@ -30,6 +31,9 @@ var fonts = {
 
 
 const LoggedIn = () => {
+    const [errMsg, setErrMsg] = useState([])
+    const [statusMsg, setStatusMsg] = useState([])
+
     const {register, watch, handleSubmit, setValue} = useForm()
 
     const [googleToken, setGoogleToken] = useState()
@@ -67,17 +71,34 @@ const LoggedIn = () => {
             method: "POST",
             headers: {"Authorization": googleToken}
         })
-        .then((msg) => {
-            console.log("received msg:", msg)
-            return msg.json()
+        .then(async (msg) => {
+            const out = await msg.json()
+
+            //console.log("received msg:", msg)
+
+            if (msg.status > 400) {
+                throw new Error(
+                    "Feil under henting av data fra Google Sheets "
+                    + msg.status 
+                    + " " 
+                    + msg.statusText
+                    + " " 
+                    + out.message
+                    + " - " 
+                    + out.error
+                )
+            }
+            return out
         })
         .then(data => {
-            console.log("received data:", data)
+            //console.log("received data:", data)
+            console.log("received sheet data")
             if (data.expenseTypes) setExpenseTypes(data.expenseTypes)
             if (data.bankAccounts) setBankAccounts(data.bankAccounts)
         })
         .catch(err => {
             console.error("received error:", err)
+            setErrMsg(errMsg => [...errMsg, "Noe galt skjedde under henting av data fra Google Sheets: " + String(err)])
         })
     }, [googleToken])
 
@@ -101,7 +122,19 @@ const LoggedIn = () => {
         setNumPages(numPages);
     }
 
+    function addToStatusMsg(msg) {
+        console.log("ADDING TO STATUS MSG: ", msg, "EXISTING: ", statusMsg)
+        setStatusMsg(statusMsg => [...statusMsg, msg])
+    }
+
+    // Clears error and status popup message
+    function clearMsg() {
+        setErrMsg([])
+        setStatusMsg([])
+    }
+
     function SelectFromKeyValueObject(props) {
+        console.log("received info: ", props)
         const objectWithKeyValues = props.obj
         const formLabel = props.label
         let options = []
@@ -192,7 +225,7 @@ const LoggedIn = () => {
     // can now generate images to PDF
     const findAttPdf = () => {
         let imageList = []
-        console.log("myPdfCanvasContainer:", myPdfCanvasContainer)
+        //console.log("myPdfCanvasContainer:", myPdfCanvasContainer)
         for (let index = 0; index < myPdfCanvasContainer.current.length; index++) {
             imageList.push(myPdfCanvasContainer.current[index].current.toDataURL('image/jpeg'))
         }
@@ -201,7 +234,8 @@ const LoggedIn = () => {
 
     // Uploading images -> read into toImageURI which triggers PDF redraw
     const onChangeImage = async (data) => {
-        console.log("set new image:", data)
+        console.log("set new image")
+        //console.log("set new image:", data)
         //setToImage(data.target.files[0])
 
         const files = [...data.target.files].map(file => {
@@ -212,14 +246,14 @@ const LoggedIn = () => {
             });
         });
         const res = await Promise.all(files);
-        console.log(res)
+        //console.log(res)
         setToImageURI(res)
     }
 
     const onChangeForm = (data) => {
         // update filename based on inputs
 
-        console.log("onChangeForm, data:", data)
+        //console.log("onChangeForm, data:", data)
 
         const randomName = (Math.random() + 1).toString(36).substring(10)
 
@@ -230,13 +264,13 @@ const LoggedIn = () => {
 
         onUpdatePdfFile()
 
-        console.log("isIncoming:", watch("isIncoming"))//, "and text:", toOrFrom)
+        //console.log("isIncoming:", watch("isIncoming"))//, "and text:", toOrFrom)
 
         //setValue("toFilePDF", pdfFile)
     }
 
     function onUpdatePdfFile() {
-        console.log("onUpdatePdfFile and customPdfFile is:", customPdfFile)
+        //console.log("onUpdatePdfFile and customPdfFile is:", customPdfFile)
 
         const pdfDocGenerator = pdfMake.createPdf(docDefinition, null, fonts);
         
@@ -247,8 +281,8 @@ const LoggedIn = () => {
     }
 
     const onSetExternalPDF = (data) => {
-        console.log("Set: custom PDF", data)
-        console.log("Found file:", data.target.files[0])
+        //console.log("Set: custom PDF", data)
+        //console.log("Found file:", data.target.files[0])
         setCustomPdfFile(data.target.files[0])
 
     }
@@ -260,23 +294,40 @@ const LoggedIn = () => {
         data.externalPDF = ''
         data.toFileImage = ''
         data.toFilePassword = ''
-        console.log(data)
+        //console.log(data)
         fetch("/api/addToSheets", {
             method: "POST",
             headers: {"Authorization": googleToken},
             body: JSON.stringify(data)
         })
-        .then((res) => res.json())
-        .then(data => fromApiToGoogle = data)
+        .then(async (res) => {
+            const out = await res.json()
+            if (res.status > 400) {
+                throw new Error("Kunne ikke legge til linje i Google Sheets - se XHR respons-feilmelding. : "
+                + res.status
+                + " "
+                + res.statusText
+                + " - " 
+                + out.message
+                + " " 
+                + out.error)
+            }
+            return out
+        })
+        .then(data => {
+            fromApiToGoogle = data
+            //console.log("received from API:", fromApiToGoogle)
+            addToStatusMsg(<a href={fromApiToGoogle.url} target="_blank" rel="noopener noreferrer">Linje lagt til - åpne Google Sheets</a>)
+        })
         .catch(err => {
             console.error("Error submitting form data to server:", err)
+            setErrMsg(errMsg => [...errMsg, "Feil under sending av data til Google: " + String(err)])
         })
 
-        console.log("received from API:", fromApiToGoogle)
 
         // Upload PDF
 
-        console.log("Uploading to sheet")
+        console.log("Uploading to Drive")
        
         let formData = new FormData();
         formData.append('uploadedFile', 
@@ -285,7 +336,7 @@ const LoggedIn = () => {
             data.toFileName
             )
 
-        console.log("Uploading this PDF:", formData) //toUpload)
+        //console.log("Uploading this PDF:", formData) //toUpload)
         fetch("/api/addPDF", {
             method: "POST",
             headers: {"Authorization": googleToken,
@@ -293,8 +344,30 @@ const LoggedIn = () => {
             },
             body: formData //toUpload
         })
+        .then(async (res) => {
+            const out = await res.json()
+            if (res.status > 400) {
+                throw new Error("Feil under opplastning - " 
+                + res.status 
+                + " " 
+                + res.statusText
+                + " - " 
+                + out.message
+                + " " 
+                + out.error)
+            }
+            return out
+        })
+        .then(msg => {
+            console.log("sent PDF")
+            //console.log("sendte PDF: ", msg)
+            //addToStatusMsg("Sendte PDF: " + msg.message)
+            addToStatusMsg(<a href={msg.urlFile} target="_blank" rel="noopener noreferrer">Åpne fil</a>)
+            addToStatusMsg(<a href={msg.urlFolder} target="_blank" rel="noopener noreferrer">Åpne Google Drive</a>)
+        })
         .catch(err => {
             console.error("Error submitting PDF to server:", err)
+            setErrMsg(errMsg => [...errMsg, "Feil i sending av PDF til server: " + String(err)])
         })
     
     }
@@ -319,8 +392,9 @@ const LoggedIn = () => {
                 canvasRef={myPdfCanvasContainer.current[index-1]}
                 onRenderSuccess={findAttPdf}
                 pageNumber={index}
+                key={index}
                 className="pdfPage" 
-                width={400}/>)
+                width={1200}/>)
         }
 
         console.log("we have pages:", pages)
@@ -332,6 +406,7 @@ const LoggedIn = () => {
 
   return (
     <Layout>
+        <StatusBar statusMsg={statusMsg} errMsg={errMsg} clearMsg={clearMsg} />
         <h1>Registrer bilag</h1>
         <button
           type="button"

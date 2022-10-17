@@ -22,7 +22,7 @@ export default function AuthRedirect({ location }) {
     <Layout>
     <h1>Vellykket innlogging</h1>
     <p>
-      Lagrer Google token info to local storage...
+      Lagrer Google token info i local storage...
     </p>
     </Layout>
   )

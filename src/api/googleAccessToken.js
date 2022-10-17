@@ -1,4 +1,5 @@
-const { google } = require("googleapis")
+//const { google } = require("googleapis")
+import { google } from 'googleapis';
 
 const googleAccessToken = async (req, res) => {
   // Initialize our Google OAuth client, same as in login function.
