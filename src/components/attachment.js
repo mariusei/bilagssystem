@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, createRef } from "react"
 import { navigate } from "gatsby"
-import { Router } from "@reach/router"
 
 import { useForm } from "react-hook-form"
 
@@ -10,10 +9,10 @@ import { Buffer } from "buffer";
 
 import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack';
 
-import PrivateRoute from "../components/privateRoute"
-import StatusBar from "../components/statusbar"
+import PrivateRoute from "./privateRoute"
+import StatusBar from "./statusbar"
 
-import Layout from "../components/layout"
+import Layout from "./layout"
 //import Seo from "../components/seo"
 import SVLogo from "../images/sv.png"
 
@@ -30,7 +29,7 @@ var fonts = {
   };
 
 
-const LoggedIn = () => {
+const Attachment = () => {
     const [errMsg, setErrMsg] = useState([])
     const [statusMsg, setStatusMsg] = useState([])
 
@@ -66,6 +65,7 @@ const LoggedIn = () => {
     useEffect(() => {
         if (googleToken === undefined) return
 
+        addToStatusMsg("Kobler til Google...");
         // Fetch remote data
         fetch(`/api/sheets`, {
             method: "POST",
@@ -73,6 +73,7 @@ const LoggedIn = () => {
         })
         .then(async (msg) => {
             const out = await msg.json()
+            clearMsg()
 
             //console.log("received msg:", msg)
 
@@ -191,7 +192,7 @@ const LoggedIn = () => {
                 width: "70%"
                 },
                 [{image: SVLogo, width: 50, alignment: "right"}]
-                ],
+            ],
             margin: [0,30]
           },
           {text: watch("accountDate"), lineHeight:3, alignment: "right", fontSize: 20}, 
@@ -290,6 +291,8 @@ const LoggedIn = () => {
     let fromApiToGoogle = {}
 
     const onSubmit = (data) => { 
+        clearMsg()
+        addToStatusMsg("Sender data til regneark...")
         //alert(JSON.stringify(data))
         data.externalPDF = ''
         data.toFileImage = ''
@@ -327,6 +330,7 @@ const LoggedIn = () => {
 
         // Upload PDF
 
+        addToStatusMsg("Sender bilag til Google Drive...")
         console.log("Uploading to Drive")
        
         let formData = new FormData();
@@ -405,89 +409,70 @@ const LoggedIn = () => {
     }
 
   return (
-    <Layout>
+    <>
         <StatusBar statusMsg={statusMsg} errMsg={errMsg} clearMsg={clearMsg} />
         <h1>Registrer bilag</h1>
-        <button
-          type="button"
-          onClick={() => {
-            fetch(`/api/logout?token=${googleToken}`, {
-              method: "POST",
-            })
-              .then(() => {
-                localStorage.removeItem("google:tokens")
-                setGoogleToken()
-                navigate("/logged-out")
-              })
-              .catch(err => {
-                console.error(`Logout error: ${err}`)
-              })
-          }}
-        >
-          Logg ut
-        </button>
 
-        <div style={style.mainContent}>
-        <form style={style.form} onSubmit={handleSubmit(onSubmit)} onBlur={onChangeForm}>
+        <div className="formAndPreview">
+        <form onSubmit={handleSubmit(onSubmit)} onBlur={onChangeForm}>
+            <section>
             <h2>Regnskap</h2>
-            <label style={style.formLabel}>
+            <label>
                 Type inntekt/utgift:
                 {expenseTypes && 
                     <SelectFromKeyValueObject obj={expenseTypes} label="expenseTypeColNo" />
                 }
             </label>
             
-            <label style={style.formLabel}>
+            <label>
                 Trekkes fra konto:
                 {bankAccounts && 
                     <SelectFromKeyValueObject obj={bankAccounts} label="creditColNo" />
                 }
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                 Dato for kontobevegelse:
                 <input type="date" {...register("accountDate")}></input>
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                 Beskrivelse:
                 <input type="text" 
                  placeholder="Match med bankovf.tekst" 
                  {...register("description")}></input>
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                 Beløp:
                 <input type="number" step="0.01" {...register("amount")}></input>
             </label>
-            <label htmlFor="isIncoming" style={style.formLabel}>
+            <label htmlFor="isIncoming">
                 Innbetaling?
                 <input type="checkbox" {...register("isIncoming")}></input>
             </label>
 
-            <label style={style.formLabel}>
-                Bilagsnummer:
-                <input type="text" {...register("attachmentNo")}></input>
-            </label>
+            </section>
 
+            <section>
             <h2>Bilag</h2>
 
-            <label style={style.formLabel}>
+            <label>
                 Til:
                 <input type="text" {...register("toReceiver")}></input>
             </label>
             
-            <label style={style.formLabel}>
+            <label>
                 Kontonummer:
                 <input type="text" {...register("toAccount")}></input>
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                 Beskrivelse:
+                <textarea {...register("toDescription")}></textarea>
             </label>
-            <textarea style={style.formLabel} {...register("toDescription")}></textarea>
             
-            <label style={style.formLabel}>
+            <label>
                 Bildevedlegg:
                 <input type="file" 
                  accept="image/png, image/jpeg"
@@ -498,7 +483,7 @@ const LoggedIn = () => {
                 ></input>
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                 PDF-vedlegg:
                 <input type="file" 
                  accept=".pdf"
@@ -512,27 +497,27 @@ const LoggedIn = () => {
                     return false
                 }}>X</button>
             </label>
+            </section>
 
-            
-
+            <section>
             <h2>Passordbeskyttelse</h2>
 
-            <label style={style.formLabel}>
+            <label>
                  Passord:
                  <input type="password" {...register("toFilePassword")}></input>
             </label>
 
-            <label style={style.formLabel}>
+            <label>
                  Filnavn:
                  <input type="text" {...register("toFileName")}></input>
             </label>
-
-            <input type="submit" value="Send inn" />
+            </section>
+            <button>Send inn</button>
         </form>
-        <div>
+        <div className="preview">
             <div style={{textAlign: "center"}}>
-            {numPages == 1 && (<p>{numPages} side</p>)}
-            {numPages > 1 && (<p>{numPages} sider</p>)}
+                {numPages == 1 && (<p>{numPages} side</p>)}
+                {numPages > 1 && (<p>{numPages} sider</p>)}
             </div>
             {pdfFile && 
             <Document className="pdfContainer" 
@@ -556,35 +541,28 @@ const LoggedIn = () => {
             }
         </div>
         </div>
-    </Layout>
-  )
-}
-
-
-const style = {
-    mainContent: {
-        width: "100%",
-        display: "flex",
-        flexDirection: "row"
-    },
-    form: {
-        width: "50%",
-        //border: "1px solid red",
-        display: "flex",
-        flexDirection: "column"
-    },
-    formLabel: {
-        //border: "1px solid blue",
-        height: 40
-    }
-}
-
-export default function App() {
-  return (
-    <>
-      <Router>
-        <PrivateRoute path="/app" component={LoggedIn} />
-      </Router>
+        <button
+          type="button"
+          style={{backgroundColor: "#cecece"}}
+          onClick={() => {
+            fetch(`/api/logout?token=${googleToken}`, {
+              method: "POST",
+            })
+              .then(() => {
+                localStorage.removeItem("google:tokens")
+                setGoogleToken()
+                navigate("/logged-out")
+              })
+              .catch(err => {
+                console.error(`Logout error: ${err}`)
+              })
+          }}
+        >
+          Logg ut
+        </button>
     </>
   )
 }
+
+
+export default Attachment

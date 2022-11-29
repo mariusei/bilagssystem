@@ -159,6 +159,9 @@ export default async function handler(req, res) {
 
       } else {
         console.log('No data found.');
+        return res.status(204).json({
+          message: "No data was found."
+        })
       }
       
 

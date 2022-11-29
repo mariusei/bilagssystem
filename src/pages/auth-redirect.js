@@ -14,7 +14,7 @@ export default function AuthRedirect({ location }) {
   
     // After setting token in localStorage, go to app homepage.
     setTimeout(() => {
-      navigate("/app/")
+      navigate("/app/bilag")
     }, 1000)
   })
 
@@ -22,7 +22,7 @@ export default function AuthRedirect({ location }) {
     <Layout>
     <h1>Vellykket innlogging</h1>
     <p>
-      Lagrer Google token info i local storage...
+      Lagrer Google token info lokalt...
     </p>
     </Layout>
   )

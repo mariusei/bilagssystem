@@ -6,6 +6,11 @@ import Layout from "../components/layout"
 import Seo from "../components/seo"
 import { navigate } from "gatsby"
 
+import { Router } from "@reach/router"
+import PrivateRoute from "../components/privateRoute"
+
+import AttachmentPage from "../components/attachment"
+import Invoice from "../components/invoice"
 
 type DataProps = {
   site: {
@@ -13,19 +18,9 @@ type DataProps = {
   }
 }
 
-
-
-const isBrowser = typeof window !== "undefined"
-
-
-const IndexPage: React.FC<PageProps<DataProps>> = ({
-  data,
-  location,
-}) => {
-
-  
+const NotLoggedIn: React.FC<any> = (data) => {
   return (
-    <Layout>
+    <>
       <Seo title="Registrer bilag" />
       <h1>
         Registrer bilag
@@ -38,21 +33,28 @@ const IndexPage: React.FC<PageProps<DataProps>> = ({
           }
         }}
       >
-        Sign in with Google
+        Logg inn med Google
       </button>
 
-      <pre>{data.site.buildTime}</pre>
       <Link to="/">Startside</Link>
+    </>
+  )
+}
+
+
+
+const isBrowser = typeof window !== "undefined"
+
+
+      //<PrivateRoute path="/faktura" component={Invoice} />
+const Index = () => {
+
+  return (
+    <Layout>
+      <NotLoggedIn />
     </Layout>
   )
+  
   }
 
-export default IndexPage
-
-export const query = graphql`
-  {
-    site {
-      buildTime(formatString: "YYYY-MM-DD hh:mm a z")
-    }
-  }
-`
+export default Index

@@ -23,6 +23,26 @@ const Header = ({ siteTitle }) => (
     >
       {siteTitle}
     </Link>
+
+    <Link
+      to="/app/bilag"
+      style={{
+        fontSize: `var(--font-lg)`,
+        textDecoration: `underline`,
+      }}
+    >
+      Registrer bilag
+    </Link>
+
+    <Link
+      to="/app/faktura"
+      style={{
+        fontSize: `var(--font-lg)`,
+        textDecoration: `underline`,
+      }}
+    >
+      Lag faktura
+    </Link>
     
     <img
       src={logo}
