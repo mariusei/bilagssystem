@@ -407,7 +407,7 @@ const Invoice = () => {
         <StatusBar statusMsg={statusMsg} errMsg={errMsg} clearMsg={clearMsg} />
         <h1>Lag faktura</h1>
 
-        <div style={style.mainContent}>
+        <div className="formAndPreview">
         <form onSubmit={handleSubmit(onSubmit)} onBlur={onChangeForm}>
             <section>
                 <h2>Mottaker</h2>
