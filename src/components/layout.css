@@ -240,6 +240,7 @@ pre tt:after {
   width: 100%;
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
 }
 
 @media only screen and (min-width: 768px)  {
@@ -350,12 +351,38 @@ form h2 {
 
 .preview {
   width: 100%;
-  padding-left: 2em;
 }
+
+@media only screen and (min-width: 768px)  {
+  .preview {
+    width: 50%;
+    flex-direction: column;
+    padding-left: 2em;
+  }
+} 
+
+.buttonRow {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 1em;
+}
+
+.buttonRow button {
+  width: 30%;
+  background-color: #7e3446;
+}
+
+.buttonRow button:disabled {
+  background-color: #aaa;
+  }
 
 .pdfContainer {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .pdfPage {

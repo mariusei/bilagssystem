@@ -47,6 +47,7 @@ const Attachment = () => {
 
     // PDF Viewer
     const [numPages, setNumPages] = useState(null);
+    const [pageNumber, setPageNumber] = useState(1);
 
     const [numPagesAtt, setNumPagesAtt] = useState()
     const [attPages, setAttPages] = useState()
@@ -520,16 +521,23 @@ const Attachment = () => {
                 {numPages > 1 && (<p>{numPages} sider</p>)}
             </div>
             {pdfFile && 
-            <Document className="pdfContainer" 
-                file={pdfFile} 
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={console.error}
-                onPassword={(callback) => callback(watch("toFilePassword"))}
-            >
-                <Page className="pdfPage" pageNumber={1} width={400}/>
-                {numPages > 1 && (<Page pageNumber={2} className="pdfPage"  width={400} />)}
-                {numPages > 2 && (<Page pageNumber={3} className="pdfPage"  width={400} />)}
-            </Document>
+            <div>
+                {numPages > 1 &&
+                <div className="buttonRow">
+                    <button onClick={() => setPageNumber(pg => pg-1)} disabled={pageNumber==1}>Forrige side</button>
+                    <span style={{width: "30%", textAlign: "center"}}> {pageNumber}</span>
+                    <button onClick={() => setPageNumber(pg => pg+1)}  disabled={pageNumber>= numPages}>Neste side</button>
+                </div>
+                }
+                <Document className="pdfContainer" 
+                    file={pdfFile} 
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={console.error}
+                    onPassword={(callback) => callback(watch("toFilePassword"))}
+                >
+                    <Page className="pdfPage" pageNumber={pageNumber} width={400}/>
+                </Document>
+            </div>
             }
             {customPdfFile && 
             <Document className="hidden" 
