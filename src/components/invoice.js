@@ -537,9 +537,9 @@ const Invoice = () => {
             <div>
                 {numPages > 1 &&
                 <div className="buttonRow">
-                    <button onClick={() => setPageNumber(pg => pg-1)} disabled={pageNumber==1}>Forrige side</button>
+                    <button onClick={() => setPageNumber(pg => pg-1)} disabled={pageNumber==1}>&lt;</button>
                     <span style={{width: "30%", textAlign: "center"}}> {pageNumber}</span>
-                    <button onClick={() => setPageNumber(pg => pg+1)}  disabled={pageNumber>= numPages}>Neste side</button>
+                    <button onClick={() => setPageNumber(pg => pg+1)}  disabled={pageNumber>= numPages}>&gt;</button>
                 </div>
                 }
             <Document className="pdfContainer" 
